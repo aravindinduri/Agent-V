@@ -130,9 +130,10 @@ The `router.py` file implements the following decision tree:
 *   **Confidence Scores:** Ask the model to return confidence (0-100%) for every field extracted to flag uncertain data.
 
 ### Screenshot
-![Streamlit UI Demo](https://i.ibb.co/B5s54kWm/Screenshot-from-2026-02-09-01-46-53.png)
+![Streamlit UI1](https://i.ibb.co/B5s54kWm/Screenshot-from-2026-02-09-01-46-53.png)
 ![Streamlit UI2](https://i.ibb.co/TnPdPTJ/Screenshot-from-2026-02-09-01-57-07.png)
-****The Agent Dashboard analyzing a raw claim document. The agent extracts data via Vision-LLM, validates it against the schema, and automatically determines the 'Manual Review' route due to missing mandatory fields.****
+![Streamlit UI3](https://i.ibb.co/xq1GzbBn/Screenshot-from-2026-02-09-02-35-57.png)
+![Streamlit UI3](https://i.ibb.co/67qztKxq/Screenshot-from-2026-02-09-02-36-34.png)
 ---
 
 
