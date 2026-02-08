@@ -1,0 +1,6 @@
+huggingface_hub
+python-dotenv
+pydantic
+pdf2image
+Pillow
+streamlit

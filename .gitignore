@@ -1,0 +1,44 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+
+# --- Virtual Environments ---
+venv/
+env/
+.venv/
+.env
+.env.*
+
+# --- Environment Variables & Secrets (CRITICAL) ---
+.env
+secrets.toml
+
+# --- Project Data (Don't commit customer PII) ---
+# Ignore all files in input/output, but keep the folder structure
+data/input/*
+!data/input/.gitkeep
+data/output/*
+!data/output/.gitkeep
+
+# --- Temporary Test Files ---
+*.pdf
+*.jpg
+*.jpeg
+*.png
+*.json
+# Keep specific configuration/example files if necessary
+!example_claim.json
+
+# --- Streamlit ---
+.streamlit/secrets.toml
+.streamlit/config.toml
+
+# --- IDEs & Editors ---
+.vscode/
+.idea/
+*.swp
+
+# --- OS Specific ---
+.DS_Store
+Thumbs.db
