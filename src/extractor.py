@@ -18,7 +18,6 @@ class DeepSeekExtractor:
         ext = os.path.splitext(file_path)[1].lower()
         
         if ext == '.pdf':
-            # Convert first page of PDF to image
             images = convert_from_path(file_path, first_page=1, last_page=1)
             return images[0] if images else None
         elif ext in ['.jpg', '.jpeg', '.png']:

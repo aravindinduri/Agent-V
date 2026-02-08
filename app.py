@@ -1,7 +1,6 @@
 import streamlit as st
 import os
 import tempfile
-import json
 from dotenv import load_dotenv
 from pdf2image import convert_from_path
 
@@ -9,19 +8,31 @@ from src.extractor import DeepSeekExtractor
 from src.router import ClaimRouter
 
 load_dotenv()
+hf_api_token = os.getenv("HF_API_TOKEN")
+hf_model_id = os.getenv("HF_MODEL_ID")
+
+try:
+    hf_api_token = st.secrets.get("HF_API_TOKEN", hf_api_token)
+    hf_model_id = st.secrets.get("HF_MODEL_ID", hf_model_id)
+except Exception:
+    pass
+
+if not hf_api_token or not hf_model_id:
+    st.warning("⚠️ HF_API_TOKEN or HF_MODEL_ID not found. Set .env or Streamlit secrets.")
+
 
 st.set_page_config(page_title="AI Claims Agent", page_icon="🛡️", layout="wide")
 
-st.title("🛡️ Autonomous Insurance Claims Agent")
+st.title("🛡️ Agent - V1.0")
 st.markdown("Upload an FNOL (First Notice of Loss) document to automatically extract data.")
 
 # --- Sidebar ---
 with st.sidebar:
     st.header("Status")
-    if os.getenv("HF_API_TOKEN"):
+    if hf_api_token:
         st.success("API Token Detected")
     else:
-        st.error("Missing .env API Token")
+        st.error("Missing HF_API_TOKEN")
 
 # --- Main Logic ---
 uploaded_file = st.file_uploader("Upload Claim Document", type=["pdf", "jpg", "png", "jpeg"])
@@ -38,7 +49,7 @@ if uploaded_file is not None:
         if uploaded_file.name.lower().endswith('.pdf'):
             try:
                 images = convert_from_path(temp_path, first_page=1, last_page=1)
-                st.image(images[0], width="stretch") 
+                st.image(images[0], width="stretch")
             except Exception as e:
                 st.error(f"Error previewing PDF: {e}")
         else:
@@ -46,7 +57,6 @@ if uploaded_file is not None:
 
     with col2:
         st.subheader("🤖 AI Analysis")
-        
         with st.spinner("Extracting data & analyzing rules..."):
             try:
                 extractor = DeepSeekExtractor()
@@ -54,11 +64,14 @@ if uploaded_file is not None:
 
                 # Extract
                 extracted_data = extractor.extract(temp_path)
-                
+                st.subheader("📝 Raw Extraction Output")
+                if hasattr(extracted_data, "model_dump"):  # dataclass
+                    st.json(extracted_data.model_dump())
+                else:
+                    st.json(vars(extracted_data))
+
                 # Route
                 decision = router.route(extracted_data)
-                
-                # --- Routing Display ---
                 route = decision.recommendedRoute
                 color = "#4CAF50" if route == "Fast-track" else \
                         "#FF9800" if route == "Manual Review" else \
@@ -71,10 +84,8 @@ if uploaded_file is not None:
                 </div>
                 """, unsafe_allow_html=True)
 
-                # --- Data Display ---
                 data_dict = decision.extractedFields
-                                
-                st.subheader("🔍 Extracted Data")
+                st.subheader("🔍 Routed / Final Data")
                 st.json(data_dict)
 
                 if decision.missingFields:
