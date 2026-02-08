@@ -86,9 +86,25 @@ class DeepSeekExtractor:
             )
 
     def _clean_and_parse_json(self, raw_text: str) -> ExtractedData:
+        import json, re
+        raw_text = raw_text.replace("```json", "").replace("```", "").strip()
+        raw_text = re.sub(r',(\s*[}\]])', r'\1', raw_text)
         try:
             data_dict = json.loads(raw_text)
+            
+            # Flatten nested structures to match schema
+            if "policy_info" in data_dict:
+                if isinstance(data_dict["policy_info"].get("effective_dates"), dict):
+                    dates = data_dict["policy_info"]["effective_dates"]
+                    data_dict["policy_info"]["effective_dates"] = f"{dates.get('start_date', '')} to {dates.get('end_date', '')}"
+            
+            if "involved_parties" in data_dict:
+                for party in data_dict["involved_parties"]:
+                    if isinstance(party.get("contact"), dict):
+                        contact = party["contact"]
+                        party["contact"] = contact.get("phone") or contact.get("email") or None
+            
             return ExtractedData(**data_dict)
-        except Exception:
-            print("JSON Parsing failed. Raw output:", raw_text)
+        except Exception as e:
+            print(f"JSON Parsing failed: {e}. Raw output:", raw_text)
             return ExtractedData(policy_info={}, incident_info={}, asset_details={})
