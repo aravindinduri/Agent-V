@@ -3,7 +3,6 @@ import os
 import tempfile
 import json
 from dotenv import load_dotenv
-from PIL import Image
 from pdf2image import convert_from_path
 
 from src.extractor import DeepSeekExtractor
@@ -11,25 +10,20 @@ from src.router import ClaimRouter
 
 load_dotenv()
 
-st.set_page_config(
-    page_title="AI Claims Agent",
-    page_icon="🛡️",
-    layout="wide"
-)
+st.set_page_config(page_title="AI Claims Agent", page_icon="🛡️", layout="wide")
 
 st.title("🛡️ Autonomous Insurance Claims Agent")
-st.markdown("Upload an FNOL (First Notice of Loss) document to automatically extract data and determine the claim workflow.")
+st.markdown("Upload an FNOL (First Notice of Loss) document to automatically extract data.")
 
+# --- Sidebar ---
 with st.sidebar:
     st.header("Status")
-    api_key = os.getenv("HF_API_TOKEN")
-    if api_key:
+    if os.getenv("HF_API_TOKEN"):
         st.success("API Token Detected")
     else:
         st.error("Missing .env API Token")
-        
-    st.info("Supported formats: PDF, JPG, PNG")
 
+# --- Main Logic ---
 uploaded_file = st.file_uploader("Upload Claim Document", type=["pdf", "jpg", "png", "jpeg"])
 
 if uploaded_file is not None:
@@ -44,19 +38,17 @@ if uploaded_file is not None:
         if uploaded_file.name.lower().endswith('.pdf'):
             try:
                 images = convert_from_path(temp_path, first_page=1, last_page=1)
-                st.image(images[0], use_container_width=True)
+                st.image(images[0], width="stretch") 
             except Exception as e:
                 st.error(f"Error previewing PDF: {e}")
         else:
-            # It's an image
-            st.image(uploaded_file, use_container_width=True)
+            st.image(uploaded_file, width="stretch")
 
     with col2:
         st.subheader("🤖 AI Analysis")
         
         with st.spinner("Extracting data & analyzing rules..."):
             try:
-                # Initialize Agent
                 extractor = DeepSeekExtractor()
                 router = ClaimRouter()
 
@@ -66,30 +58,29 @@ if uploaded_file is not None:
                 # Route
                 decision = router.route(extracted_data)
                 
-                # --- Display Route Decision ---
+                # --- Routing Display ---
                 route = decision.recommendedRoute
-                color = "gray"
-                if route == "Fast-track": color = "green"
-                elif route == "Manual Review": color = "orange"
-                elif route == "Investigation Flag": color = "red"
-                elif route == "Specialist Queue": color = "blue"
+                color = "#4CAF50" if route == "Fast-track" else \
+                        "#FF9800" if route == "Manual Review" else \
+                        "#F44336" if route == "Investigation Flag" else "#2196F3"
 
                 st.markdown(f"""
-                <div style="padding: 20px; border-radius: 10px; background-color: rgba(255, 255, 255, 0.1); border: 2px solid {color}; text-align: center;">
+                <div style="padding: 15px; border-radius: 8px; border: 2px solid {color}; text-align: center; margin-bottom: 20px;">
                     <h2 style="color: {color}; margin:0;">{route}</h2>
-                    <p style="margin-top: 10px;">{decision.reasoning}</p>
+                    <p style="margin-top: 5px;">{decision.reasoning}</p>
                 </div>
                 """, unsafe_allow_html=True)
 
-                st.divider()
+                # --- Data Display ---
+                data_dict = decision.extractedFields
+                                
+                st.subheader("🔍 Extracted Data")
+                st.json(data_dict)
 
                 if decision.missingFields:
                     st.error(f"⚠️ Missing Fields: {', '.join(decision.missingFields)}")
                 else:
                     st.success("✅ All mandatory fields present.")
-
-                with st.expander("🔍 View Extracted Data (JSON)", expanded=True):
-                    st.json(decision.extractedFields)
 
             except Exception as e:
                 st.error(f"Processing Failed: {str(e)}")
